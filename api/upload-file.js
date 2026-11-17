@@ -1,5 +1,5 @@
-import { google } from 'googleapis'
 import { Readable } from 'stream'
+import { authenticateRequest, getDriveClient } from './_drive.js'
 
 export const config = {
   api: {
@@ -15,54 +15,21 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method Not Allowed' })
   }
 
-  // Validate Master Key
-  const clientKey = req.headers['x-master-key']
-  const masterKey = process.env.MASTER_KEY
-  if (!clientKey || !masterKey || clientKey !== masterKey) {
-    return res.status(401).json({ error: 'Unauthorized: Invalid master key' })
+  const authState = authenticateRequest(req)
+  if (!authState.authenticated) {
+    return res.status(401).json({ error: 'Unauthorized: Invalid credentials or expired session' })
   }
 
   try {
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {})
-    const { fileName, mimeType, fileData } = body // fileData is base64 string
+    const { fileName, mimeType, fileData } = body
 
     if (!fileName || !fileData) {
       return res.status(400).json({ error: 'fileName and fileData are required' })
     }
 
-    const parentFolderId = process.env.GOOGLE_DRIVE_FOLDER_ID
-    const clientId = process.env.GOOGLE_CLIENT_ID
-    const clientSecret = process.env.GOOGLE_CLIENT_SECRET
-    const refreshToken = process.env.GOOGLE_REFRESH_TOKEN
-    const serviceEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL
-    let privateKey = process.env.GOOGLE_PRIVATE_KEY
-
-    let auth
-
-    if (clientId && clientSecret && refreshToken) {
-      const oauth2Client = new google.auth.OAuth2(
-        clientId.trim(),
-        clientSecret.trim(),
-        'https://developers.google.com/oauthplayground'
-      )
-      oauth2Client.setCredentials({ refresh_token: refreshToken.trim() })
-      auth = oauth2Client
-    } else if (serviceEmail && privateKey) {
-      if (!privateKey.includes('-----BEGIN PRIVATE KEY-----')) {
-        privateKey = Buffer.from(privateKey, 'base64').toString('utf8')
-      }
-      privateKey = privateKey.replace(/\\n/g, '\n')
-
-      auth = new google.auth.JWT({
-        email: serviceEmail,
-        key: privateKey,
-        scopes: ['https://www.googleapis.com/auth/drive', 'https://www.googleapis.com/auth/drive.file']
-      })
-    } else {
-      return res.status(500).json({ error: 'Google Drive configuration missing.' })
-    }
-
-    const drive = google.drive({ version: 'v3', auth })
+    const parentFolderId = authState.folderId
+    const { drive } = getDriveClient()
 
     // Convert Base64 back to binary Buffer and Stream
     const buffer = Buffer.from(fileData, 'base64')

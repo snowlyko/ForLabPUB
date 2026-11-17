@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   RefreshCw, Download, ExternalLink, Eye, Trash2,
   FileText, Image, Archive, Film, Code, Search, FolderOpen, AlertTriangle
@@ -93,7 +93,12 @@ const FILTERS = [
   { key: 'week', label: 'This Week' },
 ]
 
-export default function DriveFiles({ masterKey }) {
+export default function DriveFiles({ auth, masterKey }) {
+  const token = auth?.token
+  const master = auth?.masterKey || masterKey
+  const authHeaders = useMemo(() => {
+    return token ? { 'x-drop-token': token } : { 'x-master-key': master }
+  }, [token, master])
   const [files, setFiles] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -118,7 +123,7 @@ export default function DriveFiles({ masterKey }) {
 
     try {
       const { data } = await axios.post('/api/list-files', {}, {
-        headers: { 'x-master-key': masterKey },
+        headers: authHeaders,
       })
       setFiles(data.files || [])
     } catch (err) {
@@ -128,7 +133,7 @@ export default function DriveFiles({ masterKey }) {
       setLoading(false)
       setRefreshing(false)
     }
-  }, [masterKey])
+  }, [authHeaders])
 
   useEffect(() => {
     fetchFiles(false)
@@ -142,7 +147,7 @@ export default function DriveFiles({ masterKey }) {
 
     try {
       const { data } = await axios.post('/api/get-file-content', { fileId: file.id }, {
-        headers: { 'x-master-key': masterKey },
+        headers: authHeaders,
       })
       setPreviewContent(data.content || '')
       setPreviewTruncated(data.truncated || false)
@@ -160,7 +165,7 @@ export default function DriveFiles({ masterKey }) {
 
     try {
       await axios.post('/api/delete-file', { fileId: deleteTarget.id }, {
-        headers: { 'x-master-key': masterKey },
+        headers: authHeaders,
       })
       setFiles(prev => prev.filter(f => f.id !== deleteTarget.id))
     } catch (err) {

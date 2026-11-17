@@ -1,5 +1,5 @@
-import { google } from 'googleapis'
 import { Readable } from 'stream'
+import { authenticateRequest, getDriveClient } from './_drive.js'
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -7,11 +7,9 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method Not Allowed' })
   }
 
-  // Validate Master Key from x-master-key header
-  const clientKey = req.headers['x-master-key']
-  const masterKey = process.env.MASTER_KEY
-  if (!clientKey || !masterKey || clientKey !== masterKey) {
-    return res.status(401).json({ error: 'Unauthorized: Invalid master key' })
+  const authState = authenticateRequest(req)
+  if (!authState.authenticated) {
+    return res.status(401).json({ error: 'Unauthorized: Invalid credentials or expired session' })
   }
 
   try {
@@ -23,7 +21,7 @@ export default async function handler(req, res) {
       python: '.py',
       java: '.java',
       javascript: '.js',
-      text: '.txt'
+      text: '.txt',
     }
 
     let finalFileName = fileName
@@ -37,42 +35,10 @@ export default async function handler(req, res) {
       finalFileName = `Snippet_${dateStr}_${timeStr}${ext}`
     }
 
-    const parentFolderId = process.env.GOOGLE_DRIVE_FOLDER_ID
-    const clientId = process.env.GOOGLE_CLIENT_ID
-    const clientSecret = process.env.GOOGLE_CLIENT_SECRET
-    const refreshToken = process.env.GOOGLE_REFRESH_TOKEN
+    const parentFolderId = authState.folderId
+    const { drive } = getDriveClient()
 
-    const serviceEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL
-    let privateKey = process.env.GOOGLE_PRIVATE_KEY
-
-    let auth
-
-    if (clientId && clientSecret && refreshToken) {
-      const oauth2Client = new google.auth.OAuth2(
-        clientId.trim(),
-        clientSecret.trim(),
-        'https://developers.google.com/oauthplayground'
-      )
-      oauth2Client.setCredentials({ refresh_token: refreshToken.trim() })
-      auth = oauth2Client
-    } else if (serviceEmail && privateKey) {
-      if (!privateKey.includes('-----BEGIN PRIVATE KEY-----')) {
-        privateKey = Buffer.from(privateKey, 'base64').toString('utf8')
-      }
-      privateKey = privateKey.replace(/\\n/g, '\n')
-
-      auth = new google.auth.JWT({
-        email: serviceEmail,
-        key: privateKey,
-        scopes: ['https://www.googleapis.com/auth/drive', 'https://www.googleapis.com/auth/drive.file']
-      })
-    } else {
-      return res.status(500).json({ error: 'Google Drive configuration missing.' })
-    }
-
-    const drive = google.drive({ version: 'v3', auth })
-
-    // Find or create 'Snippets' subfolder inside parent folder
+    // Find or create 'Snippets' subfolder inside user's parent folder
     let snippetsFolderId = null
     let query = "name = 'Snippets' and mimeType = 'application/vnd.google-apps.folder' and trashed = false"
     if (parentFolderId) {
@@ -84,7 +50,7 @@ export default async function handler(req, res) {
       fields: 'files(id, name)',
       spaces: 'drive',
       supportsAllDrives: true,
-      includeItemsFromAllDrives: true
+      includeItemsFromAllDrives: true,
     })
 
     if (listFolderRes.data.files && listFolderRes.data.files.length > 0) {
@@ -93,12 +59,12 @@ export default async function handler(req, res) {
       const folderMetadata = {
         name: 'Snippets',
         mimeType: 'application/vnd.google-apps.folder',
-        ...(parentFolderId ? { parents: [parentFolderId] } : {})
+        ...(parentFolderId ? { parents: [parentFolderId] } : {}),
       }
       const folderRes = await drive.files.create({
         requestBody: folderMetadata,
         fields: 'id',
-        supportsAllDrives: true
+        supportsAllDrives: true,
       })
       snippetsFolderId = folderRes.data.id
     }
@@ -110,43 +76,47 @@ export default async function handler(req, res) {
 
     const fileMetadata = {
       name: finalFileName,
-      parents: [snippetsFolderId]
+      parents: [snippetsFolderId],
     }
 
     const media = {
       mimeType: 'text/plain; charset=utf-8',
-      body: bufferStream
+      body: bufferStream,
     }
 
     const uploadedFile = await drive.files.create({
       requestBody: fileMetadata,
       media: media,
       fields: 'id, webViewLink',
-      supportsAllDrives: true
+      supportsAllDrives: true,
     })
 
     const fileId = uploadedFile.data.id
 
     // Set permissions to anyone with link can view (reader)
-    await drive.permissions.create({
-      fileId: fileId,
-      requestBody: {
-        role: 'reader',
-        type: 'anyone'
-      },
-      supportsAllDrives: true
-    })
+    try {
+      await drive.permissions.create({
+        fileId: fileId,
+        requestBody: {
+          role: 'reader',
+          type: 'anyone',
+        },
+        supportsAllDrives: true,
+      })
+    } catch (permErr) {
+      console.warn('Permission error (non-fatal):', permErr.message)
+    }
 
     const webViewLink = uploadedFile.data.webViewLink || `https://drive.google.com/file/d/${fileId}/view?usp=sharing`
 
     return res.status(200).json({
       webViewLink,
-      fileName: finalFileName
+      fileName: finalFileName,
     })
   } catch (error) {
     console.error('Error uploading snippet:', error.response?.data || error.message || error)
     return res.status(500).json({
-      error: error.response?.data?.error_description || error.message || 'Internal Server Error'
+      error: error.response?.data?.error_description || error.message || 'Internal Server Error',
     })
   }
 }

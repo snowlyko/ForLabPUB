@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Code, Send } from 'lucide-react'
+import { Send } from 'lucide-react'
 import axios from 'axios'
 
 const LANGUAGES = [
@@ -10,7 +10,8 @@ const LANGUAGES = [
   { value: 'text', label: 'Plain Text', ext: '.txt' },
 ]
 
-export default function SnippetEditor({ masterKey, onUploadSuccess }) {
+export default function SnippetEditor({ auth, masterKey, onUploadSuccess }) {
+  const authHeaders = auth?.token ? { 'x-drop-token': auth.token } : { 'x-master-key': auth?.masterKey || masterKey }
   const [content, setContent] = useState('')
   const [language, setLanguage] = useState('text')
   const [fileName, setFileName] = useState('')
@@ -42,7 +43,7 @@ export default function SnippetEditor({ masterKey, onUploadSuccess }) {
         language,
         fileName: fileName.trim() || undefined,
       }, {
-        headers: { 'x-master-key': masterKey },
+        headers: authHeaders,
       })
 
       onUploadSuccess([{

@@ -23,25 +23,8 @@ function formatSize(bytes) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-function fileToBase64(file, onProgress) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.readAsDataURL(file)
-    reader.onprogress = (data) => {
-      if (data.lengthComputable && onProgress) {
-        onProgress(Math.round((data.loaded / data.total) * 40)) // Reading takes up to 40%
-      }
-    }
-    reader.onload = () => {
-      // Remove data url prefix (e.g. data:image/png;base64,)
-      const base64 = reader.result.split(',')[1]
-      resolve(base64)
-    }
-    reader.onerror = (error) => reject(error)
-  })
-}
-
-export default function FileDropzone({ masterKey, onUploadSuccess }) {
+export default function FileDropzone({ auth, masterKey, onUploadSuccess }) {
+  const authHeaders = auth?.token ? { 'x-drop-token': auth.token } : { 'x-master-key': auth?.masterKey || masterKey }
   const [files, setFiles] = useState([])
   const [dragOver, setDragOver] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -88,40 +71,64 @@ export default function FileDropzone({ masterKey, onUploadSuccess }) {
 
     for (let i = 0; i < files.length; i++) {
       setCurrentFileIndex(i)
-      setProgress(10)
+      setProgress(5)
 
       const file = files[i]
 
       try {
-        // Read file to base64
-        const base64Data = await fileToBase64(file, (p) => setProgress(p))
-        setProgress(50)
-
-        // Upload to Google Drive via /api/upload-file (same mechanism as snippets)
-        const { data } = await axios.post('/api/upload-file', {
+        // Step 1: Request a direct resumable upload URL from backend (tiny request, <1KB)
+        const { data: urlData } = await axios.post('/api/create-upload-url', {
           fileName: file.name,
           mimeType: file.type || 'application/octet-stream',
-          fileData: base64Data,
         }, {
-          headers: { 'x-master-key': masterKey },
+          headers: authHeaders,
+        })
+
+        setProgress(15)
+
+        // Step 2: Upload file directly to Google Drive servers (bypasses serverless payload limit)
+        const uploadRes = await axios.put(urlData.uploadUrl, file, {
+          headers: {
+            'Content-Type': file.type || 'application/octet-stream',
+          },
           onUploadProgress: (progressEvent) => {
             if (progressEvent.total) {
-              const percent = 50 + Math.round((progressEvent.loaded * 50) / progressEvent.total)
+              const percent = 15 + Math.round((progressEvent.loaded * 75) / progressEvent.total)
               setProgress(percent)
             }
           },
         })
 
+        const fileId = uploadRes.data?.id || urlData.fileId
+        setProgress(90)
+
+        // Step 3: Set "anyone with link" permission via backend
+        let webViewLink = uploadRes.data?.webViewLink || urlData.webViewLink
+        if (fileId) {
+          try {
+            const { data: permData } = await axios.post('/api/set-permissions', {
+              fileId,
+            }, {
+              headers: authHeaders,
+            })
+            webViewLink = permData.webViewLink || webViewLink
+          } catch (permErr) {
+            console.warn('Permission setting failed (non-fatal):', permErr)
+          }
+        }
+
+        setProgress(100)
+
         results.push({
           fileName: file.name,
-          webViewLink: data.webViewLink,
-          fileId: data.fileId,
+          webViewLink: webViewLink || `https://drive.google.com/file/d/${fileId}/view?usp=sharing`,
+          fileId,
         })
       } catch (err) {
         console.error(`Failed to upload ${file.name}:`, err)
         results.push({
           fileName: file.name,
-          error: err.response?.data?.error || 'Upload failed',
+          error: err.response?.data?.error || err.message || 'Upload failed',
         })
       }
     }
@@ -135,7 +142,7 @@ export default function FileDropzone({ masterKey, onUploadSuccess }) {
     if (successResults.length > 0) {
       onUploadSuccess(successResults)
     } else {
-      alert('Upload failed. Please try again.')
+      alert('Upload failed. Please check your network and credentials.')
     }
   }
 

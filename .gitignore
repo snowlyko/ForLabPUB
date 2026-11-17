@@ -21,6 +21,9 @@ dist-ssr
 *.db-journal
 *.sqlite
 
+# Presentations & Documents
+*.pdf
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

@@ -85,10 +85,10 @@ export default function KeyAuthModal({ onAuthenticated, onOpenRegister }) {
           isMaster: true,
         })
       } else {
-        triggerError('Invalid master key')
+        triggerError(res.data?.error || 'Invalid master key')
       }
-    } catch {
-      triggerError('Invalid master key')
+    } catch (err) {
+      triggerError(err.response?.data?.error || 'Invalid master key')
     } finally {
       setLoading(false)
     }

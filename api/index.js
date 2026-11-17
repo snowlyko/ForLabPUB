@@ -28,6 +28,45 @@ const routeMap = {
   'admin-manage': adminManageHandler,
 }
 
+async function ensureRequestBody(req) {
+  if (req.body !== undefined && req.body !== null) {
+    if (typeof req.body === 'string') {
+      try {
+        req.body = JSON.parse(req.body)
+      } catch {
+        // Keep as string
+      }
+    }
+    return
+  }
+
+  // If body is not parsed, read incoming stream
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    return new Promise((resolve) => {
+      let data = ''
+      req.on('data', (chunk) => {
+        data += chunk
+      })
+      req.on('end', () => {
+        if (data) {
+          try {
+            req.body = JSON.parse(data)
+          } catch {
+            req.body = data
+          }
+        } else {
+          req.body = {}
+        }
+        resolve()
+      })
+      req.on('error', () => {
+        req.body = {}
+        resolve()
+      })
+    })
+  }
+}
+
 export default async function handler(req, res) {
   // Extract route from query param (?route=...) or URL path
   const routeParam = req.query?.route
@@ -46,6 +85,7 @@ export default async function handler(req, res) {
   }
 
   try {
+    await ensureRequestBody(req)
     return await targetHandler(req, res)
   } catch (err) {
     console.error(`Error in API route [${targetRoute}]:`, err)

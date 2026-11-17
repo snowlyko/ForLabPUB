@@ -2,7 +2,7 @@ import { createClient } from '@libsql/client'
 import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
 
-const dbUrl = process.env.TURSO_DATABASE_URL || 'file:forlab.db'
+const dbUrl = process.env.TURSO_DATABASE_URL || (process.env.VERCEL ? 'file:/tmp/forlab.db' : 'file:forlab.db')
 const dbAuthToken = process.env.TURSO_AUTH_TOKEN || undefined
 
 export const db = createClient({

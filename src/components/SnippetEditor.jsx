@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Send } from 'lucide-react'
+import { Send, FileCode } from 'lucide-react'
 import axios from 'axios'
 
 const LANGUAGES = [
@@ -7,6 +7,10 @@ const LANGUAGES = [
   { value: 'python', label: 'Python', ext: '.py' },
   { value: 'java', label: 'Java', ext: '.java' },
   { value: 'javascript', label: 'JavaScript', ext: '.js' },
+  { value: 'typescript', label: 'TypeScript', ext: '.ts' },
+  { value: 'html', label: 'HTML', ext: '.html' },
+  { value: 'css', label: 'CSS', ext: '.css' },
+  { value: 'json', label: 'JSON', ext: '.json' },
   { value: 'text', label: 'Plain Text', ext: '.txt' },
 ]
 
@@ -18,14 +22,12 @@ export default function SnippetEditor({ auth, masterKey, onUploadSuccess }) {
   const [uploading, setUploading] = useState(false)
 
   const handleKeyDown = (e) => {
-    // Allow Tab key for indentation inside the textarea
     if (e.key === 'Tab') {
       e.preventDefault()
       const start = e.target.selectionStart
       const end = e.target.selectionEnd
       const value = e.target.value
       setContent(value.substring(0, start) + '    ' + value.substring(end))
-      // Set cursor position after the tab
       setTimeout(() => {
         e.target.selectionStart = e.target.selectionEnd = start + 4
       }, 0)
@@ -64,47 +66,59 @@ export default function SnippetEditor({ auth, masterKey, onUploadSuccess }) {
   const selectedLang = LANGUAGES.find(l => l.value === language)
 
   return (
-    <div className="fade-enter">
-      {/* Toolbar */}
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+      {/* Sharp Toolbar */}
       <div className="snippet-toolbar">
         <select
           className="lang-select"
           value={language}
           onChange={(e) => setLanguage(e.target.value)}
+          title="Select syntax language"
         >
           {LANGUAGES.map(lang => (
             <option key={lang.value} value={lang.value}>
-              {lang.label}
+              SYNTAX: {lang.label.toUpperCase()}
             </option>
           ))}
         </select>
+
         <input
           type="text"
-          className="snippet-filename"
-          placeholder={`Filename (optional)${selectedLang ? selectedLang.ext : ''}`}
+          className="filename-input"
+          placeholder={`FILENAME (OPTIONAL, E.G. SNIPPET${selectedLang ? selectedLang.ext.toUpperCase() : '.TXT'})`}
           value={fileName}
           onChange={(e) => setFileName(e.target.value)}
         />
       </div>
 
       {/* Code Textarea */}
-      <textarea
-        className="snippet-textarea"
-        placeholder="Paste your code, text, or URL here..."
-        value={content}
-        onChange={(e) => setContent(e.target.value)}
-        onKeyDown={handleKeyDown}
-        spellCheck={false}
-      />
-
-      {/* Character count */}
-      <div className="char-count">
-        {content.length.toLocaleString()} characters
+      <div className="snippet-editor-wrap">
+        <textarea
+          className="snippet-textarea"
+          placeholder="// Paste or write source code, terminal logs, or lab text here..."
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          onKeyDown={handleKeyDown}
+          spellCheck={false}
+        />
+        <div className="snippet-footer">
+          <div className="snippet-footer-left">
+            <FileCode size={13} style={{ color: 'var(--amber)' }} />
+            <span>
+              {content ? `${content.split('\n').length} LINES • ` : '0 LINES • '}
+              {content.length.toLocaleString()} BYTES
+            </span>
+          </div>
+          <div className="snippet-footer-right">
+            <span>UTF-8 • {selectedLang ? selectedLang.label.toUpperCase() : 'PLAIN TEXT'}</span>
+          </div>
+        </div>
       </div>
 
-      {/* Upload Button */}
+      {/* Action Button */}
       <button
-        className="btn-primary mt-12"
+        className="btn-primary"
+        style={{ marginTop: '14px' }}
         onClick={handleUpload}
         disabled={!content.trim() || uploading}
       >
@@ -112,8 +126,8 @@ export default function SnippetEditor({ auth, masterKey, onUploadSuccess }) {
           <div className="spinner" />
         ) : (
           <>
-            <Send size={18} />
-            Save to Google Drive
+            <Send size={14} />
+            <span>Save Snippet File to Google Drive</span>
           </>
         )}
       </button>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { X, Copy, Check, AlertCircle, HardDrive, Sparkles } from 'lucide-react'
+import { X, Copy, Check, AlertCircle } from 'lucide-react'
 import axios from 'axios'
 
 export default function RegisterModal({ onClose, onRegistered }) {
@@ -15,7 +15,6 @@ export default function RegisterModal({ onClose, onRegistered }) {
   const [errorMsg, setErrorMsg] = useState('')
 
   useEffect(() => {
-    // Fetch the sync bot email
     axios.get('/api/get-system-info')
       .then(res => {
         if (res.data.serviceAccountEmail) {
@@ -37,7 +36,7 @@ export default function RegisterModal({ onClose, onRegistered }) {
     setErrorMsg('')
 
     if (!slug.trim() || !pin.trim() || !folderUrl.trim()) {
-      setErrorMsg('Please fill in username, PIN, and folder link.')
+      setErrorMsg('Please enter a username, PIN, and Google Drive folder link.')
       return
     }
 
@@ -68,129 +67,88 @@ export default function RegisterModal({ onClose, onRegistered }) {
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div
-        className="modal-card glass-panel-static"
-        style={{ maxWidth: '480px', width: '92%', maxHeight: '90vh', overflowY: 'auto' }}
+        className="modal-card"
+        style={{ maxWidth: '480px', width: '92%' }}
         onClick={(e) => e.stopPropagation()}
       >
         <button onClick={onClose} className="modal-close-btn" title="Close">
-          <X size={16} />
+          <X size={14} />
         </button>
 
-        <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-          <div className="auth-icon" style={{ margin: '0 auto 12px' }}>
-            <Sparkles size={24} />
-          </div>
-          <h2 className="modal-title">Connect Your Google Drive</h2>
-          <p className="modal-subtitle">Set up a private drop box in under 1 minute</p>
+        <div style={{ marginBottom: '18px' }}>
+          <h2 className="modal-title">// CONNECT_GOOGLE_DRIVE</h2>
+          <p className="modal-subtitle">Configure private drop gateway in two steps</p>
         </div>
 
-        {/* Step 1: Share folder */}
+        {/* Step 1 */}
         <div style={{
           background: 'var(--bg-input)',
           border: '1px solid var(--border)',
-          borderRadius: 'var(--radius-md)',
-          padding: '16px',
-          marginBottom: '16px'
+          padding: '12px',
+          marginBottom: '14px'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
             <span style={{
-              background: 'var(--accent)',
-              color: '#fff',
-              fontSize: '11px',
+              background: 'var(--amber)',
+              color: '#000000',
+              fontFamily: 'var(--font-mono)',
+              fontSize: '10px',
               fontWeight: 700,
-              borderRadius: '50%',
-              width: '18px',
-              height: '18px',
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>1</span>
-            <span style={{ fontWeight: 600, fontSize: '13px', color: 'var(--text-primary)' }}>
-              Share a Drive Folder as "Editor"
+              padding: '1px 5px'
+            }}>STEP_01</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-primary)', fontWeight: 600 }}>
+              Share folder as "Editor" with sync bot:
             </span>
           </div>
-          <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '10px', lineHeight: 1.4 }}>
-            Create an empty folder in your Google Drive and share it with this sync address:
-          </p>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            background: 'rgba(0,0,0,0.3)',
-            border: '1px solid var(--border)',
-            padding: '8px 12px',
-            borderRadius: 'var(--radius-sm)'
-          }}>
-            <code style={{
-              fontSize: '11px',
-              color: 'var(--accent)',
-              wordBreak: 'break-all',
-              flex: 1,
-              fontFamily: 'monospace'
-            }}>
-              {serviceAccountEmail || 'Loading sync address...'}
-            </code>
+
+          <div className="modal-link-box" style={{ marginTop: '6px' }}>
+            <span className="modal-link-text">
+              {serviceAccountEmail || 'QUERYING_SERVICE_ACCOUNT...'}
+            </span>
             <button
               type="button"
               onClick={copyEmail}
               disabled={!serviceAccountEmail}
               className={`modal-copy-btn ${copied ? 'copied' : ''}`}
-              style={{ flexShrink: 0 }}
             >
-              {copied ? <Check size={12} /> : <Copy size={12} />}
-              {copied ? 'Copied' : 'Copy'}
+              {copied ? <Check size={11} /> : <Copy size={11} />}
+              <span>{copied ? 'COPIED' : 'COPY'}</span>
             </button>
           </div>
         </div>
 
-        {/* Step 2: Form */}
+        {/* Step 2 */}
         <form onSubmit={handleRegister}>
-          <div style={{ marginBottom: '14px' }}>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '6px' }}>
-              Your Username / Slug
-            </label>
-            <div style={{ position: 'relative' }}>
-              <input
-                type="text"
-                className="auth-input"
-                style={{ textAlign: 'left', paddingLeft: '14px', fontSize: '14px' }}
-                placeholder="e.g. surya or lab-alex"
-                value={slug}
-                onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
-                autoComplete="off"
-                required
-              />
-            </div>
-            {slug && (
-              <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginTop: '4px', display: 'block' }}>
-                Your quick link: <code>/u/{slug}</code>
-              </span>
-            )}
+          <div className="field-group">
+            <label className="field-label">Portal Slug (URL /u/slug)</label>
+            <input
+              type="text"
+              className="auth-input"
+              placeholder="e.g. surya or lab-alex"
+              value={slug}
+              onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+              autoComplete="off"
+              required
+            />
           </div>
 
-          <div style={{ display: 'flex', gap: '12px', marginBottom: '14px' }}>
-            <div style={{ flex: 1 }}>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '6px' }}>
-                Display Name (optional)
-              </label>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+            <div className="field-group">
+              <label className="field-label">Display Name (Optional)</label>
               <input
                 type="text"
                 className="auth-input"
-                style={{ textAlign: 'left', paddingLeft: '14px', fontSize: '14px' }}
-                placeholder="Surya"
+                placeholder="Alex Mercer"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 autoComplete="off"
               />
             </div>
-            <div style={{ flex: 1 }}>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '6px' }}>
-                Drop PIN (4-6 digits)
-              </label>
+            <div className="field-group">
+              <label className="field-label">Drop PIN (4-6 digits)</label>
               <input
                 type="password"
                 className="auth-input"
-                style={{ textAlign: 'center', fontSize: '14px' }}
                 placeholder="••••"
                 maxLength={10}
                 value={pin}
@@ -201,14 +159,11 @@ export default function RegisterModal({ onClose, onRegistered }) {
             </div>
           </div>
 
-          <div style={{ marginBottom: '16px' }}>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '6px' }}>
-              Google Drive Folder Link
-            </label>
+          <div className="field-group">
+            <label className="field-label">Google Drive Folder Link or ID</label>
             <input
               type="text"
               className="auth-input"
-              style={{ textAlign: 'left', paddingLeft: '14px', fontSize: '13px' }}
               placeholder="Paste Google Drive folder URL or ID"
               value={folderUrl}
               onChange={(e) => setFolderUrl(e.target.value)}
@@ -221,16 +176,16 @@ export default function RegisterModal({ onClose, onRegistered }) {
             <div style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '8px',
-              background: 'var(--error-muted)',
-              color: 'var(--error)',
-              padding: '10px 14px',
-              borderRadius: 'var(--radius-sm)',
-              fontSize: '12px',
-              marginBottom: '16px',
-              lineHeight: 1.4
+              gap: '6px',
+              background: 'var(--red-muted)',
+              border: '1px solid var(--red)',
+              color: 'var(--red)',
+              padding: '8px 10px',
+              fontSize: '11px',
+              fontFamily: 'var(--font-mono)',
+              marginBottom: '14px',
             }}>
-              <AlertCircle size={16} style={{ flexShrink: 0 }} />
+              <AlertCircle size={14} style={{ flexShrink: 0 }} />
               <span>{errorMsg}</span>
             </div>
           )}
@@ -243,10 +198,7 @@ export default function RegisterModal({ onClose, onRegistered }) {
             {loading ? (
               <div className="spinner" />
             ) : (
-              <>
-                <HardDrive size={18} />
-                Verify & Connect Folder
-              </>
+              <span>Verify & Connect Google Drive</span>
             )}
           </button>
         </form>

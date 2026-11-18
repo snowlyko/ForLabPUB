@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import {
   Users, Key, Trash2, CheckCircle2, AlertCircle, RefreshCw,
-  ExternalLink, Shield, HardDrive, Check, X
+  ExternalLink, Shield, HardDrive, Check
 } from 'lucide-react'
 import axios from 'axios'
 
@@ -12,17 +12,14 @@ export default function AdminPanel({ masterKey }) {
   const [syncEmail, setSyncEmail] = useState('')
   const [refreshing, setRefreshing] = useState(false)
 
-  // Reset PIN modal state
   const [pinTargetUser, setPinTargetUser] = useState(null)
   const [newPin, setNewPin] = useState('')
   const [pinLoading, setPinLoading] = useState(false)
   const [pinSuccessMsg, setPinSuccessMsg] = useState('')
 
-  // Delete modal state
   const [deleteTargetUser, setDeleteTargetUser] = useState(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
 
-  // Test folder status per user { [slug]: { loading, ok, folderName, error } }
   const [folderStatuses, setFolderStatuses] = useState({})
 
   const fetchUsers = useCallback(async (isRefresh = false) => {
@@ -99,7 +96,7 @@ export default function AdminPanel({ masterKey }) {
         headers: { 'x-master-key': masterKey },
       })
 
-      setPinSuccessMsg(`PIN for @${pinTargetUser.slug} updated!`)
+      setPinSuccessMsg(`PIN for @${pinTargetUser.slug} updated successfully!`)
       setTimeout(() => {
         setPinTargetUser(null)
         setNewPin('')
@@ -134,128 +131,87 @@ export default function AdminPanel({ masterKey }) {
   }
 
   return (
-    <div className="fade-enter">
-      {/* Top Banner / Stats */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-        gap: '12px',
-        marginBottom: '20px'
-      }}>
-        <div style={{
-          background: 'var(--bg-input)',
-          border: '1px solid var(--border)',
-          borderRadius: 'var(--radius-md)',
-          padding: '14px 16px',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', fontSize: '12px', marginBottom: '4px' }}>
-            <Users size={14} />
-            <span>Registered Users</span>
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+      {/* Metrics Row */}
+      <div className="admin-metrics-grid">
+        <div className="admin-stat-card admin-stat-card-1">
+          <div className="stat-card-header" style={{ color: 'var(--emerald)' }}>
+            <Users size={14} style={{ color: 'var(--emerald)' }} />
+            <span>// REGISTERED_USERS</span>
           </div>
-          <div style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)' }}>
+          <div className="stat-val-large">
             {users.length}
           </div>
+          <div className="stat-sub-text">Active User Gateways</div>
         </div>
 
-        <div style={{
-          background: 'var(--bg-input)',
-          border: '1px solid var(--border)',
-          borderRadius: 'var(--radius-md)',
-          padding: '14px 16px',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', fontSize: '12px', marginBottom: '4px' }}>
-            <Shield size={14} />
-            <span>Sync Account</span>
+        <div className="admin-stat-card admin-stat-card-2">
+          <div className="stat-card-header" style={{ color: 'var(--cyan)' }}>
+            <Shield size={14} style={{ color: 'var(--cyan)' }} />
+            <span>// SYNC_BOT_ACCOUNT</span>
           </div>
-          <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--accent)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {syncEmail || 'Google Drive Connected'}
+          <div className="stat-val-mono" title={syncEmail}>
+            {syncEmail || 'ONLINE'}
           </div>
+          <div className="stat-sub-text">Google Service Account</div>
         </div>
 
-        <div style={{
-          background: 'var(--bg-input)',
-          border: '1px solid var(--border)',
-          borderRadius: 'var(--radius-md)',
-          padding: '14px 16px',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', fontSize: '12px', marginBottom: '4px' }}>
-            <HardDrive size={14} />
-            <span>Storage Database</span>
+        <div className="admin-stat-card admin-stat-card-3">
+          <div className="stat-card-header" style={{ color: 'var(--purple)' }}>
+            <HardDrive size={14} style={{ color: 'var(--purple)' }} />
+            <span>// METADATA_DATABASE</span>
           </div>
-          <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--success)' }}>
+          <div className="stat-val-mono">
             SQLite (forlab.db)
           </div>
+          <div className="stat-sub-text">Local Storage Engine</div>
         </div>
       </div>
 
       {/* Toolbar */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: '16px'
-      }}>
-        <h3 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Users size={16} />
-          User Management
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+        <h3 style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)', textTransform: 'uppercase' }}>
+          // USER_GATEWAY_PORTALS ({users.length})
         </h3>
         <button
-          className="drive-refresh-btn"
+          className="btn-secondary"
           onClick={() => fetchUsers(true)}
           disabled={refreshing}
-          title="Refresh User List"
         >
-          <RefreshCw size={14} className={refreshing ? 'drive-spin' : ''} />
+          <RefreshCw size={12} className={refreshing ? 'drive-spin' : ''} />
+          <span>Refresh List</span>
         </button>
       </div>
 
-      {/* Content */}
+      {/* Users List */}
       {loading ? (
-        <div className="drive-loading">
-          {[1, 2].map(i => <div key={i} className="drive-skeleton" />)}
+        <div style={{ padding: '36px 0', textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-secondary)' }}>
+          // QUERYING_USER_REGISTRY...
         </div>
       ) : error ? (
-        <div className="drive-empty">
-          <AlertCircle size={24} color="var(--error)" />
-          <p className="drive-empty-title">{error}</p>
-          <button className="btn-secondary mt-12" onClick={() => fetchUsers(false)}>
-            Retry
-          </button>
+        <div style={{ background: 'var(--bg-input)', border: '1px solid var(--border)', padding: '24px', textAlign: 'center' }}>
+          <p style={{ color: 'var(--red)', fontFamily: 'var(--font-mono)', fontSize: '12px', marginBottom: '8px' }}>{error}</p>
+          <button className="btn-secondary" onClick={() => fetchUsers(false)}>Retry</button>
         </div>
       ) : users.length === 0 ? (
-        <div className="drive-empty">
-          <Users size={32} strokeWidth={1.2} />
-          <p className="drive-empty-title">No users registered yet</p>
-          <p className="drive-empty-sub">Users will show up here when they connect their Google Drive.</p>
+        <div style={{ background: 'var(--bg-input)', border: '1px solid var(--border)', padding: '36px', textAlign: 'center', fontFamily: 'var(--font-mono)', color: 'var(--text-tertiary)' }}>
+          [ NO REGISTERED USER PORTALS ]
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
           {users.map(u => {
             const status = folderStatuses[u.slug]
             const folderDriveUrl = `https://drive.google.com/drive/folders/${u.drive_folder_id}`
 
             return (
-              <div
-                key={u.slug}
-                style={{
-                  background: 'var(--bg-input)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 'var(--radius-md)',
-                  padding: '14px 16px',
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: '12px'
-                }}
-              >
-                <div>
+              <div key={u.slug} className="admin-user-card">
+                <div style={{ minWidth: '200px', flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                    <span style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-primary)' }}>
+                    <span style={{ fontWeight: 700, fontFamily: 'var(--font-mono)', fontSize: '13px', color: 'var(--amber)' }}>
                       @{u.slug}
                     </span>
                     {u.name && u.name !== u.slug && (
-                      <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                      <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
                         ({u.name})
                       </span>
                     )}
@@ -263,76 +219,70 @@ export default function AdminPanel({ masterKey }) {
                       href={`/u/${u.slug}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      title="Open user drop portal"
-                      style={{ color: 'var(--accent)', fontSize: '11px', display: 'inline-flex', alignItems: 'center', gap: '2px', textDecoration: 'none' }}
+                      title="Open user portal"
+                      style={{ color: 'var(--cyan)', fontSize: '11px', fontFamily: 'var(--font-mono)', display: 'inline-flex', alignItems: 'center', gap: '2px', textDecoration: 'none' }}
                     >
-                      /u/{u.slug}
-                      <ExternalLink size={11} />
+                      <span>/u/{u.slug}</span>
+                      <ExternalLink size={10} />
                     </a>
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', color: 'var(--text-secondary)' }}>
-                    <span>Folder ID:</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', fontFamily: 'var(--font-mono)', color: 'var(--text-tertiary)' }}>
+                    <span>FOLDER:</span>
                     <a
                       href={folderDriveUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      style={{ color: 'var(--accent)', fontFamily: 'monospace', textDecoration: 'none' }}
-                      title="Open in Google Drive"
+                      style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}
                     >
                       {u.drive_folder_id.substring(0, 14)}...
                     </a>
-                    <span>&middot;</span>
-                    <span>Joined: {new Date(u.created_at).toLocaleDateString()}</span>
+                    <span>&bull;</span>
+                    <span>REGISTERED: {new Date(u.created_at).toLocaleDateString()}</span>
                   </div>
 
                   {status && (
-                    <div style={{ marginTop: '6px', fontSize: '11px' }}>
+                    <div style={{ marginTop: '6px', fontSize: '11px', fontFamily: 'var(--font-mono)' }}>
                       {status.loading ? (
-                        <span style={{ color: 'var(--text-secondary)' }}>Testing write access...</span>
+                        <span style={{ color: 'var(--text-secondary)' }}>// TESTING_WRITE_ACCESS...</span>
                       ) : status.ok ? (
-                        <span style={{ color: 'var(--success)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                          <CheckCircle2 size={12} /> Connected: {status.folderName}
+                        <span style={{ color: 'var(--emerald)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                          <CheckCircle2 size={12} /> VERIFIED: {status.folderName}
                         </span>
                       ) : (
-                        <span style={{ color: 'var(--error)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                          <AlertCircle size={12} /> {status.error}
+                        <span style={{ color: 'var(--red)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                          <AlertCircle size={12} /> ACCESS_ERROR: {status.error}
                         </span>
                       )}
                     </div>
                   )}
                 </div>
 
-                {/* Actions */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <button
                     className="btn-secondary"
-                    style={{ width: 'auto', padding: '6px 10px', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '5px' }}
                     onClick={() => handleTestFolder(u)}
                     disabled={status?.loading}
-                    title="Test if sync bot can write to this folder"
                   >
-                    <RefreshCw size={12} className={status?.loading ? 'drive-spin' : ''} />
-                    Test Access
+                    <RefreshCw size={11} className={status?.loading ? 'drive-spin' : ''} />
+                    <span>Test</span>
                   </button>
 
                   <button
                     className="btn-secondary"
-                    style={{ width: 'auto', padding: '6px 10px', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '5px' }}
                     onClick={() => { setPinTargetUser(u); setNewPin(''); setPinSuccessMsg('') }}
-                    title="Reset forgotten PIN"
                   >
-                    <Key size={12} />
-                    Reset PIN
+                    <Key size={11} />
+                    <span>Reset PIN</span>
                   </button>
 
                   <button
-                    className="drive-action-btn drive-delete-btn"
+                    className="btn-secondary"
                     onClick={() => setDeleteTargetUser(u)}
-                    title="Delete user from database"
-                    style={{ width: '32px', height: '32px' }}
+                    title="Delete user"
+                    style={{ color: 'var(--red)' }}
                   >
-                    <Trash2 size={14} />
+                    <Trash2 size={12} />
                   </button>
                 </div>
               </div>
@@ -344,68 +294,59 @@ export default function AdminPanel({ masterKey }) {
       {/* Reset PIN Modal */}
       {pinTargetUser && (
         <div className="modal-overlay" onClick={() => !pinLoading && setPinTargetUser(null)}>
-          <div className="modal-card glass-panel-static" onClick={e => e.stopPropagation()} style={{ maxWidth: '380px' }}>
-            <button className="modal-close-btn" onClick={() => setPinTargetUser(null)}>
-              <X size={14} />
-            </button>
-            <div className="auth-icon" style={{ margin: '0 auto 12px' }}>
-              <Key size={22} />
-            </div>
-            <h3 className="modal-title" style={{ fontSize: '18px' }}>Reset PIN</h3>
-            <p className="modal-subtitle">
-              Set a new Drop PIN for <strong style={{ color: 'var(--accent)' }}>@{pinTargetUser.slug}</strong>
+          <div className="modal-card" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px' }}>
+            <h3 className="modal-title" style={{ marginBottom: '8px' }}>// RESET_PORTAL_PIN</h3>
+            <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '14px' }}>
+              Assign new PIN for <strong style={{ color: 'var(--amber)', fontFamily: 'var(--font-mono)' }}>@{pinTargetUser.slug}</strong>
             </p>
 
             {pinSuccessMsg ? (
-              <div style={{ color: 'var(--success)', textAlign: 'center', padding: '16px 0', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-                <Check size={18} />
-                {pinSuccessMsg}
+              <div style={{ color: 'var(--emerald)', fontFamily: 'var(--font-mono)', fontSize: '12px', padding: '12px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Check size={14} />
+                <span>{pinSuccessMsg}</span>
               </div>
             ) : (
-              <form onSubmit={handleResetPinSubmit} style={{ marginTop: '14px' }}>
-                <input
-                  type="password"
-                  className="auth-input"
-                  placeholder="New 4-6 digit PIN"
-                  value={newPin}
-                  onChange={e => setNewPin(e.target.value)}
-                  autoFocus
-                  required
-                />
-                <button
-                  type="submit"
-                  className="btn-primary mt-12"
-                  disabled={pinLoading || newPin.trim().length < 4}
-                >
-                  {pinLoading ? <div className="spinner" /> : 'Save New PIN'}
-                </button>
+              <form onSubmit={handleResetPinSubmit}>
+                <div className="field-group">
+                  <label className="field-label">New PIN (4-6 Digits)</label>
+                  <input
+                    type="password"
+                    className="auth-input"
+                    value={newPin}
+                    onChange={e => setNewPin(e.target.value)}
+                    autoFocus
+                    required
+                  />
+                </div>
+                <div style={{ display: 'flex', gap: '8px', marginTop: '14px' }}>
+                  <button type="button" className="btn-secondary" style={{ flex: 1 }} onClick={() => setPinTargetUser(null)}>
+                    Cancel
+                  </button>
+                  <button type="submit" className="btn-primary" style={{ flex: 1 }} disabled={pinLoading || newPin.trim().length < 4}>
+                    {pinLoading ? <div className="spinner" /> : 'Save PIN'}
+                  </button>
+                </div>
               </form>
             )}
           </div>
         </div>
       )}
 
-      {/* Delete User Confirmation Modal */}
+      {/* Delete User Modal */}
       {deleteTargetUser && (
         <div className="modal-overlay" onClick={() => !deleteLoading && setDeleteTargetUser(null)}>
-          <div className="delete-confirm glass-panel-static" onClick={e => e.stopPropagation()}>
-            <Trash2 size={24} style={{ color: 'var(--error)', marginBottom: '14px' }} />
-            <h3 className="delete-confirm-title">Remove User</h3>
-            <p className="delete-confirm-text">
-              Are you sure you want to delete <strong style={{ color: 'var(--text-primary)' }}>@{deleteTargetUser.slug}</strong> from ForLab?
-              Their Google Drive folder and files will NOT be deleted.
+          <div className="modal-card" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px' }}>
+            <h3 className="modal-title" style={{ color: 'var(--red)', marginBottom: '8px' }}>// REMOVE_PORTAL_USER</h3>
+            <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '16px', lineHeight: 1.5 }}>
+              Are you sure you want to delete user <strong style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>@{deleteTargetUser.slug}</strong> from ForLab? Their Google Drive folder will not be touched.
             </p>
-            <div className="delete-confirm-actions">
-              <button
-                className="btn-secondary"
-                onClick={() => setDeleteTargetUser(null)}
-                disabled={deleteLoading}
-                style={{ flex: 1 }}
-              >
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button className="btn-secondary" style={{ flex: 1 }} onClick={() => setDeleteTargetUser(null)} disabled={deleteLoading}>
                 Cancel
               </button>
               <button
-                className="drive-confirm-delete-btn"
+                className="btn-primary"
+                style={{ flex: 1, background: 'var(--red)', borderColor: 'var(--red)', color: '#ffffff' }}
                 onClick={handleDeleteUser}
                 disabled={deleteLoading}
               >

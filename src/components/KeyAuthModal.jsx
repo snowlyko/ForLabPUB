@@ -1,9 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
-import { Lock, ShieldCheck, User, Key, UserPlus } from 'lucide-react'
+import { ShieldCheck, User, Key, ArrowRight, Lock, Sun, Moon } from 'lucide-react'
 import axios from 'axios'
 
-export default function KeyAuthModal({ onAuthenticated, onOpenRegister }) {
-  // Extract slug from URL if present (e.g. /u/surya, ?u=surya, #u=surya)
+export default function KeyAuthModal({ onAuthenticated, onOpenRegister, theme, onToggleTheme }) {
   const getInitialSlug = () => {
     const pathMatch = window.location.pathname.match(/\/u\/([a-zA-Z0-9_-]+)/)
     if (pathMatch) return pathMatch[1]
@@ -104,149 +103,246 @@ export default function KeyAuthModal({ onAuthenticated, onOpenRegister }) {
   }
 
   return (
-    <div className="auth-overlay">
-      <div className="auth-card glass-panel-static">
-        <div className="auth-icon">
-          <Lock size={28} />
-        </div>
-        <h1 className="auth-title">ForLab</h1>
+    <div className="auth-full-screen">
+      {/* Left Pane: Technical Hero (Full-Screen Split) */}
+      <div className="auth-hero-pane">
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+              <span className="brand-badge">FORLAB v2</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--emerald)', letterSpacing: '0.05em' }}>
+                [GATEWAY_ONLINE]
+              </span>
+            </div>
+            {onToggleTheme && (
+              <button
+                type="button"
+                onClick={onToggleTheme}
+                className="theme-toggle-btn"
+                title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
+              >
+                {theme === 'dark' ? <Sun size={12} style={{ color: 'var(--amber)' }} /> : <Moon size={12} style={{ color: 'var(--primary)' }} />}
+                <span>{theme === 'dark' ? 'LIGHT' : 'DARK'}</span>
+              </button>
+            )}
+          </div>
 
-        {isLockedToSlug ? (
-          <p className="auth-subtitle">
-            Welcome back, <strong style={{ color: 'var(--accent)' }}>{slug}</strong>
-          </p>
-        ) : (
+          <div className="auth-hero-brand">
+            <h1 className="auth-hero-logo">Public Lab File & Drive Bridge.</h1>
+            <p className="auth-hero-desc">
+              Zero-login direct streaming from shared lab PCs directly into your personal Google Drive storage. High-throughput resumable chunks with PIN access control.
+            </p>
+          </div>
+
+          {/* Technical Specs 2x2 Grid with vibrant accents */}
+          <div className="auth-spec-grid">
+            <div className="spec-box spec-box-1">
+              <div className="spec-key">// UPLOAD STREAM</div>
+              <div className="spec-val">Resumable Cloud Stream</div>
+              <div className="spec-desc">High-speed chunked direct upload</div>
+            </div>
+            <div className="spec-box spec-box-2">
+              <div className="spec-key">// AUTHENTICATION</div>
+              <div className="spec-val">Isolated PIN Credentials</div>
+              <div className="spec-desc">Zero lab PC credentials stored</div>
+            </div>
+            <div className="spec-box spec-box-3">
+              <div className="spec-key">// STORAGE BACKEND</div>
+              <div className="spec-val">Google Drive API v3</div>
+              <div className="spec-desc">Direct sync to your Drive folder</div>
+            </div>
+            <div className="spec-box spec-box-4">
+              <div className="spec-key">// SNIPPET VAULT</div>
+              <div className="spec-val">Code & Text Sharing</div>
+              <div className="spec-desc">Syntax highlight & instant save</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="auth-hero-footer">
+          <span>FORLAB WORKBENCH &bull; SHARP INDUSTRIAL UI</span>
+          <span>PORT: 3001 &bull; PROTOCOL: HTTP/2</span>
+        </div>
+      </div>
+
+      {/* Right Pane: Auth Terminal Console */}
+      <div className="auth-console-pane">
+        <div className="auth-console-box">
           <div style={{
             display: 'flex',
-            gap: '6px',
-            background: 'var(--bg-input)',
-            padding: '4px',
-            borderRadius: 'var(--radius-sm)',
-            margin: '12px 0 16px',
-            border: '1px solid var(--border)'
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            borderBottom: '1px solid var(--border)',
+            paddingBottom: '12px',
+            marginBottom: '20px'
           }}>
-            <button
-              type="button"
-              className={`tab-btn ${mode === 'pin' ? 'active' : ''}`}
-              style={{ flex: 1, padding: '6px 10px', fontSize: '12px' }}
-              onClick={() => { setMode('pin'); setErrorMsg('') }}
-            >
-              <User size={13} />
-              User PIN
-            </button>
-            <button
-              type="button"
-              className={`tab-btn ${mode === 'master' ? 'active' : ''}`}
-              style={{ flex: 1, padding: '6px 10px', fontSize: '12px' }}
-              onClick={() => { setMode('master'); setErrorMsg('') }}
-            >
-              <Key size={13} />
-              Master Key
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Lock size={15} style={{ color: 'var(--primary)' }} />
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '0.05em' }}>
+                ACCESS_CONSOLE
+              </span>
+            </div>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--emerald)', fontWeight: 700 }}>
+              [READY]
+            </span>
           </div>
-        )}
 
-        {/* Form: User Drop PIN */}
-        {mode === 'pin' && (
-          <form onSubmit={handleUserAuth}>
-            {!isLockedToSlug && (
-              <div style={{ marginBottom: '10px' }}>
+          <div className="auth-header-block">
+            <p className="auth-console-sub">
+              {isLockedToSlug
+                ? `Portal locked to @${slug}. Enter PIN to proceed.`
+                : 'Enter your credentials to unlock your Google Drive workspace.'
+              }
+            </p>
+          </div>
+
+          {!isLockedToSlug && (
+            <div className="auth-mode-switch">
+              <button
+                type="button"
+                className={`auth-mode-btn ${mode === 'pin' ? 'active' : ''}`}
+                onClick={() => { setMode('pin'); setErrorMsg('') }}
+              >
+                <User size={13} />
+                <span>User PIN</span>
+              </button>
+              <button
+                type="button"
+                className={`auth-mode-btn ${mode === 'master' ? 'active' : ''}`}
+                onClick={() => { setMode('master'); setErrorMsg('') }}
+              >
+                <Key size={13} />
+                <span>Master Passcode</span>
+              </button>
+            </div>
+          )}
+
+          {/* Form: User Drop PIN */}
+          {mode === 'pin' && (
+            <form onSubmit={handleUserAuth}>
+              {!isLockedToSlug && (
+                <div className="field-group">
+                  <label className="field-label">Username / Portal Slug</label>
+                  <input
+                    type="text"
+                    className="auth-input"
+                    placeholder="e.g. surya or lab-alex"
+                    value={slug}
+                    onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                    autoComplete="username"
+                    required
+                  />
+                </div>
+              )}
+
+              <div className="field-group">
+                <label className="field-label">Access PIN (4-6 digits)</label>
                 <input
-                  type="text"
-                  className="auth-input"
-                  placeholder="Username (e.g. surya)"
-                  value={slug}
-                  onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
-                  autoComplete="username"
+                  ref={inputRef}
+                  type="password"
+                  className={`auth-input ${error ? 'error' : ''}`}
+                  placeholder="••••"
+                  value={pin}
+                  onChange={(e) => setPin(e.target.value)}
+                  autoFocus
+                  autoComplete="current-password"
                   required
                 />
               </div>
-            )}
-            <input
-              ref={inputRef}
-              type="password"
-              className={`auth-input ${error ? 'error' : ''}`}
-              placeholder="Drop PIN (••••)"
-              value={pin}
-              onChange={(e) => setPin(e.target.value)}
-              autoFocus
-              autoComplete="current-password"
-              required
-            />
-            <p className={`auth-error-text ${errorMsg ? 'visible' : ''}`}>
-              {errorMsg || '\u00A0'}
-            </p>
-            <button
-              type="submit"
-              className="btn-primary"
-              disabled={!slug.trim() || !pin.trim() || loading}
-            >
-              {loading ? (
-                <div className="spinner" />
-              ) : (
-                <>
-                  <ShieldCheck size={18} />
-                  Unlock Drop Box
-                </>
-              )}
-            </button>
-          </form>
-        )}
 
-        {/* Form: Master Key */}
-        {mode === 'master' && (
-          <form onSubmit={handleMasterAuth}>
-            <input
-              ref={inputRef}
-              type="password"
-              className={`auth-input ${error ? 'error' : ''}`}
-              placeholder="Master Passcode"
-              value={masterKey}
-              onChange={(e) => setMasterKey(e.target.value)}
-              autoFocus
-              autoComplete="off"
-              required
-            />
-            <p className={`auth-error-text ${errorMsg ? 'visible' : ''}`}>
-              {errorMsg || '\u00A0'}
-            </p>
-            <button
-              type="submit"
-              className="btn-primary"
-              disabled={!masterKey.trim() || loading}
-            >
-              {loading ? (
-                <div className="spinner" />
-              ) : (
-                <>
-                  <ShieldCheck size={18} />
-                  Unlock
-                </>
-              )}
-            </button>
-          </form>
-        )}
+              <div className={`auth-error-text ${errorMsg ? 'visible' : ''}`}>
+                {errorMsg || '\u00A0'}
+              </div>
 
-        {/* Bottom CTAs */}
-        <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--border)' }}>
-          <button
-            type="button"
-            onClick={onOpenRegister}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: 'var(--accent)',
-              fontSize: '13px',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              cursor: 'pointer',
-              fontWeight: 500,
-            }}
-          >
-            <UserPlus size={14} />
-            Connect your own Google Drive
-          </button>
+              <button
+                type="submit"
+                className="btn-primary"
+                disabled={!slug.trim() || !pin.trim() || loading}
+              >
+                {loading ? (
+                  <div className="spinner" />
+                ) : (
+                  <>
+                    <ShieldCheck size={14} />
+                    <span>Unlock Workspace</span>
+                  </>
+                )}
+              </button>
+            </form>
+          )}
+
+          {/* Form: Master Key */}
+          {mode === 'master' && (
+            <form onSubmit={handleMasterAuth}>
+              <div className="field-group">
+                <label className="field-label">System Master Passcode</label>
+                <input
+                  ref={inputRef}
+                  type="password"
+                  className={`auth-input ${error ? 'error' : ''}`}
+                  placeholder="Enter master key"
+                  value={masterKey}
+                  onChange={(e) => setMasterKey(e.target.value)}
+                  autoFocus
+                  autoComplete="off"
+                  required
+                />
+              </div>
+
+              <div className={`auth-error-text ${errorMsg ? 'visible' : ''}`}>
+                {errorMsg || '\u00A0'}
+              </div>
+
+              <button
+                type="submit"
+                className="btn-primary"
+                disabled={!masterKey.trim() || loading}
+              >
+                {loading ? (
+                  <div className="spinner" />
+                ) : (
+                  <>
+                    <ShieldCheck size={14} />
+                    <span>Unlock Master Console</span>
+                  </>
+                )}
+              </button>
+            </form>
+          )}
+
+          {/* Connect New Folder Link */}
+          <div style={{ marginTop: '24px', paddingTop: '16px', borderTop: '1px solid var(--border)' }}>
+            <button
+              type="button"
+              onClick={onOpenRegister}
+              style={{
+                width: '100%',
+                background: 'var(--primary-muted)',
+                border: '1px solid rgba(37, 99, 235, 0.2)',
+                color: 'var(--primary)',
+                fontSize: '11.5px',
+                fontFamily: 'var(--font-mono)',
+                fontWeight: 600,
+                padding: '10px 14px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                cursor: 'pointer',
+                transition: 'all 0.12s ease'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = 'rgba(37, 99, 235, 0.15)'
+                e.currentTarget.style.borderColor = 'var(--primary)'
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = 'var(--primary-muted)'
+                e.currentTarget.style.borderColor = 'rgba(37, 99, 235, 0.2)'
+              }}
+            >
+              <span>+ Connect New Google Drive Folder</span>
+              <ArrowRight size={13} style={{ color: 'var(--primary)' }} />
+            </button>
+          </div>
         </div>
       </div>
     </div>

@@ -13,7 +13,7 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }))
 app.use(express.text({ limit: '50mb' }))
 
 // Forward all /api/* requests through unified API handler
-app.all('/api/*', async (req, res) => {
+app.all('/api/{*splat}', async (req, res) => {
   try {
     await apiHandler(req, res)
   } catch (err) {

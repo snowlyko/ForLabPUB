@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
-import { CheckCircle, Copy, Check, ExternalLink, X } from 'lucide-react'
+import { CheckCircle2, Copy, Check, ExternalLink, X } from 'lucide-react'
 
 export default function UploadSuccessModal({ results, onClose }) {
   const [copiedIndex, setCopiedIndex] = useState(null)
@@ -11,7 +11,6 @@ export default function UploadSuccessModal({ results, onClose }) {
       setCopiedIndex(index)
       setTimeout(() => setCopiedIndex(null), 2000)
     } catch {
-      // Fallback for older browsers
       const textArea = document.createElement('textarea')
       textArea.value = link
       document.body.appendChild(textArea)
@@ -29,84 +28,99 @@ export default function UploadSuccessModal({ results, onClose }) {
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div
-        className="modal-card glass-panel-static"
+        className="modal-card"
         onClick={(e) => e.stopPropagation()}
+        style={{ maxWidth: '440px' }}
       >
-        {/* Close Button */}
-        <button onClick={onClose} className="modal-close-btn">
+        <button onClick={onClose} className="modal-close-btn" title="Close">
           <X size={14} />
         </button>
 
-        {/* Success Icon */}
-        <div className="modal-success-icon">
-          <CheckCircle size={26} />
+        <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            color: 'var(--emerald)',
+            fontFamily: 'var(--font-mono)',
+            fontSize: '11px',
+            fontWeight: 700,
+            marginBottom: '8px'
+          }}>
+            <CheckCircle2 size={16} />
+            <span>[UPLOAD_STREAM_VERIFIED]</span>
+          </div>
+
+          <h2 className="modal-title">
+            {singleResult ? 'File Stream Complete' : `${results.length} Files Streamed`}
+          </h2>
+          <p className="modal-subtitle">
+            {singleResult
+              ? results[0].fileName
+              : 'All files safely committed to Google Drive'
+            }
+          </p>
         </div>
 
-        <h2 className="modal-title">
-          {singleResult ? 'Uploaded' : `${results.length} Files Uploaded`}
-        </h2>
-        <p className="modal-subtitle">
-          {singleResult
-            ? results[0].fileName
-            : 'All files saved to Google Drive'
-          }
-        </p>
-
-        {/* QR Code (for single file) */}
+        {/* QR Code */}
         {singleResult && primaryLink && (
           <div className="modal-qr-wrap">
             <div className="modal-qr">
               <QRCodeSVG
                 value={primaryLink}
-                size={130}
+                size={140}
                 level="M"
                 bgColor="#ffffff"
-                fgColor="#0b0b0d"
+                fgColor="#060709"
               />
             </div>
           </div>
         )}
 
         {/* Links */}
-        {results.map((result, i) => (
-          <div key={i} className="modal-link-row">
-            {!singleResult && (
-              <div className="modal-link-label">
-                {result.fileName}
+        <div style={{ marginBottom: '16px' }}>
+          {results.map((result, i) => (
+            <div key={i} style={{ marginBottom: '8px' }}>
+              {!singleResult && (
+                <div style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)', marginBottom: '4px' }}>
+                  {result.fileName}
+                </div>
+              )}
+              <div className="modal-link-box">
+                <span className="modal-link-text">
+                  {result.webViewLink}
+                </span>
+                <button
+                  className={`modal-copy-btn ${copiedIndex === i ? 'copied' : ''}`}
+                  onClick={() => copyLink(result.webViewLink, i)}
+                >
+                  {copiedIndex === i ? <Check size={11} /> : <Copy size={11} />}
+                  <span>{copiedIndex === i ? 'COPIED' : 'COPY'}</span>
+                </button>
               </div>
-            )}
-            <div className="modal-link-box">
-              <span className="modal-link-text">
-                {result.webViewLink}
-              </span>
-              <button
-                className={`modal-copy-btn ${copiedIndex === i ? 'copied' : ''}`}
-                onClick={() => copyLink(result.webViewLink, i)}
-              >
-                {copiedIndex === i ? <Check size={11} /> : <Copy size={11} />}
-                {copiedIndex === i ? 'Copied' : 'Copy'}
-              </button>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
 
-        {/* Open in Drive Button */}
-        {singleResult && primaryLink && (
-          <a
-            href={primaryLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn-secondary"
-            style={{ textDecoration: 'none' }}
-          >
-            <ExternalLink size={14} />
-            Open in Google Drive
-          </a>
-        )}
+        {/* Actions */}
+        <div style={{ display: 'flex', gap: '8px' }}>
+          {singleResult && primaryLink && (
+            <a
+              href={primaryLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-secondary"
+              style={{ flex: 1, textDecoration: 'none' }}
+            >
+              <ExternalLink size={13} />
+              <span>Drive Link</span>
+            </a>
+          )}
 
-        <button className="btn-primary mt-12" onClick={onClose}>
-          Done
-        </button>
+          <button className="btn-primary" style={{ flex: 1 }} onClick={onClose}>
+            Done
+          </button>
+        </div>
       </div>
     </div>
   )
